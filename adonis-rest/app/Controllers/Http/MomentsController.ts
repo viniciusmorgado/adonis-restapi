@@ -17,7 +17,7 @@ export default class MomentsController {
     // Aqui salvamos a imagem que vem no corpo da request
     // porém aplicamos as validações definidas na propriedade privada
     // da classe MomentsController chamada ValidationsOptions
-    const image = request.file('image', this.ValidationsOptions)
+    const image = request.file('image', this.ValidationsOptions);
     // Esse bloco if altera o nome da imagem para um uuid gerado
     // automaticamente, para evitar risco de sobreposição.
     if(image){
@@ -54,32 +54,49 @@ export default class MomentsController {
 
   // Pega apenas um registro
   // quando criamos o post, nossos dados vieram via httpcontext da request
-  // nesse caso eles virão pela URL, para isso utilizamos {params} como parâmetro
-  // do nosso método.
+  // nesse caso eles virão pela URL, para isso utilizamos {params}
+  // como parâmetro do nosso método.
   public async show({params}: HttpContextContract) {
     // findOrFail assim como o all do método index
     // são métodos built-in do AdonisJS
-    const moment = await Moment.findOrFail(params.id)
+    const moment = await Moment.findOrFail(params.id);
     return {
       data: moment
     }
   }
 
-  public async destroy({params, response}: HttpContextContract) {
+  public async destroy({params}: HttpContextContract) {
     // Encontre o item
-    const moment = await Moment.findOrFail(params.id)
-    if(moment === null){
-      response.status(401);
-      return {
-        message: 'Item não encontrado!'
-      }
-    } else {
-        // Mas ao invés de retornar o deleta
-        await moment.delete();
-    }
+    const moment = await Moment.findOrFail(params.id);
+    // Mas ao invés de retornar o deleta
+    await moment.delete();
     return {
       message: 'Momento excluído com sucesso!',
       data: moment
+    }
+  }
+
+  public async update({params, request}: HttpContextContract){
+    const body = request.body();
+    const moment = await Moment.findOrFail(params.id);
+    moment.title = body.title;
+    moment.description = body.description;
+    // Se a imagem do momento for diferente da imagem
+    // sendo enviada no corpo da requisição, ou caso não houver
+    // imagem alguma.
+    if(moment.image != body.image || !moment.image) {
+      const image = request.file('image', this.ValidationsOptions);
+      if(image){
+        const imageName = `${uuidv4()}.${image.extname}`
+        await image.move(Application.tmpPath('uploads'), {
+          name: imageName
+        })
+        moment.image = imageName;
+      }
+    }
+    await moment.save();
+    return {
+      message: 'Momento atualizado com sucesso!'
     }
   }
 }
