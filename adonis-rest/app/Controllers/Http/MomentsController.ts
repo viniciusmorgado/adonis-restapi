@@ -43,4 +43,43 @@ export default class MomentsController {
       data: moment
     }
   }
+
+  // Pega todos os dados do Moment
+  public async index() {
+    const moment = await Moment.all();
+    return {
+      data: moment
+    }
+  }
+
+  // Pega apenas um registro
+  // quando criamos o post, nossos dados vieram via httpcontext da request
+  // nesse caso eles virão pela URL, para isso utilizamos {params} como parâmetro
+  // do nosso método.
+  public async show({params}: HttpContextContract) {
+    // findOrFail assim como o all do método index
+    // são métodos built-in do AdonisJS
+    const moment = await Moment.findOrFail(params.id)
+    return {
+      data: moment
+    }
+  }
+
+  public async destroy({params, response}: HttpContextContract) {
+    // Encontre o item
+    const moment = await Moment.findOrFail(params.id)
+    if(moment === null){
+      response.status(401);
+      return {
+        message: 'Item não encontrado!'
+      }
+    } else {
+        // Mas ao invés de retornar o deleta
+        await moment.delete();
+    }
+    return {
+      message: 'Momento excluído com sucesso!',
+      data: moment
+    }
+  }
 }
